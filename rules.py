@@ -38,7 +38,7 @@ MIN_DAYS_FOR_HOUR_BASELINE: int = 5    # Minimum distinct days needed for Rule 2
 
 # ── Helper: bucket charges into calendar hours ─────────────────────────────
 
-def _charges_to_hourly_buckets(
+def charges_to_hourly_buckets(
     charges: list,
     reference_tz=timezone.utc,
 ) -> dict[tuple[int, int, int, int], int]:
@@ -95,7 +95,7 @@ def compute_ewma(
     now_utc = datetime.now(timezone.utc)
     cutoff = now_utc - timedelta(days=EWMA_HISTORY_DAYS)
 
-    buckets = _charges_to_hourly_buckets(all_charges)
+    buckets = charges_to_hourly_buckets(all_charges)
 
     # Separate historical hours from the current hour
     historical_counts = []
@@ -196,7 +196,7 @@ def rule_hour_of_day(
     now_utc = datetime.now(timezone.utc)
     cutoff = now_utc - timedelta(days=HOUR_BASELINE_HISTORY_DAYS)
 
-    buckets = _charges_to_hourly_buckets(all_charges)
+    buckets = charges_to_hourly_buckets(all_charges)
 
     # Collect counts for matching hour-of-day, excluding the current hour key
     same_hour_counts = []

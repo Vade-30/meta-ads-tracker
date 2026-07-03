@@ -1,0 +1,59 @@
+name: Meta Ads — 12-Hour Summary
+
+on:
+  schedule:
+    # Runs at 12:00 AM UTC and 12:00 PM UTC every day.
+    # NOTE: UTC — adjust these cron times if you want the summary to align
+    # with YOUR local midnight/noon instead.
+    # Example for UTC+8 (Manila): use "0 16 * * *" and "0 4 * * *"
+    - cron: '0 0 * * *'   # 12:00 AM UTC
+    - cron: '0 12 * * *'  # 12:00 PM UTC
+  # Allow manual trigger from the Actions tab for testing
+  workflow_dispatch:
+
+# ── Concurrency ────────────────────────────────────────────────────────────
+# Intentionally uses a DIFFERENT concurrency group from check-gmail.yml
+# ("gmail-summary" vs "gmail-check") so a long-running fraud-alert loop
+# never blocks or delays the summary from sending.
+concurrency:
+  group: gmail-summary
+  cancel-in-progress: false
+
+jobs:
+  summarize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5   # Summary is fast — hard cap for safety
+
+    steps:
+      # ── 1. Checkout code ───────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── 2. Restore charge history cache (read-only) ────────────────────
+      # Uses the SAME cache key as check-gmail.yml so we read the same DB.
+      # This workflow never writes new charges, so it doesn't re-save cache.
+      - name: Restore charge history cache
+        uses: actions/cache@v4
+        with:
+          path: data/
+          key: charge-history-v1-${{ runner.os }}
+          restore-keys: |
+            charge-history-v1-
+
+      # ── 3. Set up Python ───────────────────────────────────────────────
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # ── 4. Install dependencies ────────────────────────────────────────
+      - name: Install dependencies
+        run: pip install --quiet -r requirements.txt
+
+      # ── 5. Run the summary script ──────────────────────────────────────
+      # Only Telegram secrets are needed here — no Gmail access required.
+      - name: Send 12-hour summary
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python summary.py
