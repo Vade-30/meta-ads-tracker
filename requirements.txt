@@ -1,0 +1,16 @@
+# Meta Ads Gmail Monitor — Python dependencies
+#
+# Install with:   pip install -r requirements.txt
+# GitHub Actions: installed fresh on each run (no venv caching needed
+#                 since the package list is small and installs fast).
+
+# Gmail API client
+google-api-python-client>=2.120.0
+
+# OAuth support (used by check_gmail.py for credential refresh
+# and by get_refresh_token.py for the local interactive flow)
+google-auth>=2.29.0
+google-auth-oauthlib>=1.2.0
+
+# HTTP requests (Telegram Bot API calls in alert.py)
+requests>=2.31.0

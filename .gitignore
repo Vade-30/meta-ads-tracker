@@ -1,0 +1,41 @@
+# ── Secrets & credentials ──────────────────────────────────────────────────
+credentials.json
+token.json
+*.json.bak
+
+# ── Charge history database (financial data — cache only, never commit) ────
+data/
+*.db
+*.db-shm
+*.db-wal
+
+# ── Python ─────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+pip-wheel-metadata/
+
+# ── Virtual environments ───────────────────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+
+# ── OS / editor junk ───────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+*.code-workspace
+
+# ── GitHub Actions local test outputs ─────────────────────────────────────
+*.log
