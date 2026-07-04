@@ -95,24 +95,30 @@ def compute_stats(charges: list, period_start: datetime, period_end: datetime) -
         avg_gap_minutes = None  # only 1 charge — no gap to compute
 
     # Busiest hour within the period
+    PHT_TZ = timezone(timedelta(hours=8))
     buckets = charges_to_hourly_buckets(charges)
     if buckets:
         busiest_key = max(buckets, key=lambda k: buckets[k])
         busiest_hour_count = buckets[busiest_key]
         year, month, day, hour = busiest_key
-        # Format as "2:00 PM–3:00 PM"
+        # Convert UTC bucket hour to PHT
         try:
             start_dt = datetime(year, month, day, hour, tzinfo=timezone.utc)
             end_dt   = start_dt + timedelta(hours=1)
+            
+            start_pht = start_dt.astimezone(PHT_TZ)
+            end_pht   = end_dt.astimezone(PHT_TZ)
+            
             busiest_hour_label = (
-                f"{start_dt.strftime('%-I:%M %p')}–{end_dt.strftime('%-I:%M %p')} UTC"
+                f"{start_pht.strftime('%-I:%M %p')}–{end_pht.strftime('%-I:%M %p')} PHT"
             )
         except ValueError:
-            # strftime %-I is Linux-only; fall back for safety
-            start_hour_str = f"{hour % 12 or 12}:00 {'AM' if hour < 12 else 'PM'}"
-            end_h = (hour + 1) % 24
+            # Fallback for Windows or systems where strftime %-I is not supported
+            h_pht = (hour + 8) % 24
+            start_hour_str = f"{h_pht % 12 or 12}:00 {'AM' if h_pht < 12 else 'PM'}"
+            end_h = (h_pht + 1) % 24
             end_hour_str   = f"{end_h % 12 or 12}:00 {'AM' if end_h < 12 else 'PM'}"
-            busiest_hour_label = f"{start_hour_str}–{end_hour_str} UTC"
+            busiest_hour_label = f"{start_hour_str}–{end_hour_str} PHT"
     else:
         busiest_hour_label = None
         busiest_hour_count = 0
@@ -137,11 +143,15 @@ def format_summary_message(
     """
     Build the Telegram summary message from computed stats.
     """
-    # Period label, e.g. "12:00 AM – 12:00 PM UTC"
+    # Period label in Philippines Time (PHT)
+    PHT_TZ = timezone(timedelta(hours=8))
+    start_pht = period_start.astimezone(PHT_TZ)
+    end_pht   = period_end.astimezone(PHT_TZ)
+    
     fmt = "%I:%M %p"
     period_label = (
-        f"{period_start.strftime(fmt).lstrip('0')} – "
-        f"{period_end.strftime(fmt).lstrip('0')} UTC"
+        f"{start_pht.strftime(fmt).lstrip('0')} – "
+        f"{end_pht.strftime(fmt).lstrip('0')} PHT"
     )
 
     if stats["count"] == 0:
