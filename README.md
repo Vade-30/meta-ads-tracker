@@ -242,7 +242,8 @@ meta-ads-tracker/
 ## 12-Hour Summary
 
 In addition to real-time fraud alerts, the tool sends a **routine 12-hour
-status report** via Telegram twice a day.
+status report** via Telegram twice a day at **12:00 AM PHT** (midnight) and
+**12:00 PM PHT** (noon), controlled by `.github/workflows/summary.yml`.
 
 ### What it includes
 ```
@@ -251,50 +252,42 @@ Charges: 14
 Total: $12,600.00
 Average amount: $900.00/charge
 Average frequency: 1 charge every 51 min
-Busiest hour: 2:00 PM–3:00 PM UTC (3 charges)
-Period: 12:00 AM – 12:00 PM UTC
+Busiest hour: 2:00 PM–3:00 PM PHT (3 charges)
+Period: 12:00 AM – 12:00 PM PHT
 ```
-
-### When it sends
-Twice a day at **12:00 AM UTC** and **12:00 PM UTC**, controlled by
-`.github/workflows/summary.yml`.
-
-> **Note:** The times are in UTC. If you want the summary to arrive at
-> your local midnight/noon instead, adjust the cron expressions in the
-> workflow file. For UTC+8 (Manila), use `0 16 * * *` (midnight local)
-> and `0 4 * * *` (noon local).
 
 ### How it differs from fraud alerts
 | | Fraud Alert | 12-Hour Summary |
 |---|---|---|
-| Trigger | Suspicious charge detected | Fixed schedule (2×/day) |
-| Urgency | High — repeats every 10–60s | Low — single message only |
+| Trigger | Suspicious charge detected | Fixed schedule (12am/pm PHT) |
+| Urgency | High — repeats every 5–30s | Low — single message only |
 | Requires /ack | Yes | No |
 | Purpose | Immediate action needed | Informational status check |
 
-### How to customize
+---
 
-**Change the schedule** — edit the `cron:` lines in
-`.github/workflows/summary.yml`:
-```yaml
-- cron: '0 0 * * *'   # 12:00 AM UTC  ← change this
-- cron: '0 12 * * *'  # 12:00 PM UTC  ← and this
-```
+## Interactive Telegram Bot
 
-**Change the summary period** (default 12 hours) — edit this constant
-at the top of `summary.py`:
-```python
-SUMMARY_PERIOD_HOURS: int = 12   # change to 6, 24, etc.
-```
+You can interact with your bot by sending it commands on Telegram. Commands are parsed and executed every 10 minutes when the script runs (or instantly if you trigger a manual check).
 
-### No new secrets required
-The summary uses the same `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`
-secrets already configured — nothing new to add.
+### Available Commands:
+* **`/summary`** — Sends the 12-hour summary instantly on-demand.
+* **`/history`** — Sends the transaction history since the most recent **3:00 PM PHT** cycle reset:
+  * If requested *after* 3:00 PM PHT, it lists charges starting from 3:00 PM PHT *today*.
+  * If requested *before* 3:00 PM PHT, it lists charges starting from 3:00 PM PHT *yesterday*.
+  * Output format is simple:
+    ```text
+    Total: $1800
+    4:00pm - $900
+    5:21pm - $900
+    ```
+* **`/help`** — Shows the help menu with all available commands.
+
+### Security
+Only messages sent by the owner (matching the `TELEGRAM_CHAT_ID` secret) are processed. Commands from unauthorized users are silently ignored.
 
 ### Independence from fraud alerts
-The summary workflow uses a **separate concurrency group** (`gmail-summary`)
-from the fraud-detection workflow (`gmail-check`).  This means a long-running
-30-minute alert loop never blocks or delays the summary from sending.
+The summary and bot interactions are designed defensively to never interfere with or block the main fraud-detection workflow.
 
 ---
 

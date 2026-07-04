@@ -2,12 +2,9 @@ name: Meta Ads — 12-Hour Summary
 
 on:
   schedule:
-    # Runs at 12:00 AM UTC and 12:00 PM UTC every day.
-    # NOTE: UTC — adjust these cron times if you want the summary to align
-    # with YOUR local midnight/noon instead.
-    # Example for UTC+8 (Manila): use "0 16 * * *" and "0 4 * * *"
-    - cron: '0 0 * * *'   # 12:00 AM UTC
-    - cron: '0 12 * * *'  # 12:00 PM UTC
+    # Runs at exactly 12:00 AM PHT (4:00 PM UTC) and 12:00 PM PHT (4:00 AM UTC) every day.
+    - cron: '0 16 * * *'  # 12:00 AM PHT (4:00 PM UTC)
+    - cron: '0 4 * * *'   # 12:00 PM PHT (4:00 AM UTC)
   # Allow manual trigger from the Actions tab for testing
   workflow_dispatch:
 

@@ -49,6 +49,7 @@ from googleapiclient.errors import HttpError
 from db import init_db, insert_charge, get_all_charges, get_state, set_state
 from rules import evaluate_rules
 from alert import run_alert_loop
+from bot import process_telegram_commands
 
 # ── Logging setup ──────────────────────────────────────────────────────────
 
@@ -439,6 +440,9 @@ def main() -> None:
 
     # ── Database init ──────────────────────────────────────────────────────
     conn = init_db()
+
+    # ── Poll and process interactive Telegram commands ─────────────────────
+    process_telegram_commands(conn)
 
     # ── Load persisted state ───────────────────────────────────────────────
     last_msg_id = get_state(conn, STATE_LAST_MSG_ID)
