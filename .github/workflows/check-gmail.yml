@@ -2,8 +2,11 @@ name: Meta Ads Gmail Monitor
 
 on:
   schedule:
-    # Run every 10 minutes, 24/7
+    # Run every 10 minutes, 24/7 (as a fallback)
     - cron: '*/10 * * * *'
+  # Allow triggering via GitHub API (instant)
+  repository_dispatch:
+    types: [trigger-check]
   # Allow manual trigger from the Actions tab for testing
   workflow_dispatch:
 
