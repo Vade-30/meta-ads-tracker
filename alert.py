@@ -38,12 +38,12 @@ logger = logging.getLogger(__name__)
 TELEGRAM_API = "https://api.telegram.org/bot{token}/{method}"
 
 # Alert loop timing (seconds)
-TIER_1_INTERVAL = 10    # 0 – 2 min
-TIER_2_INTERVAL = 30    # 2 – 10 min
-TIER_3_INTERVAL = 60    # 10 – 30 min
-TIER_1_END      = 120   # 2 min
-TIER_2_END      = 600   # 10 min
-HARD_CAP        = 1800  # 30 min
+TIER_1_INTERVAL = 5     # 0 – 5 min (every 5 seconds)
+TIER_2_INTERVAL = 30    # 5 – 10 min (every 30 seconds)
+TIER_3_INTERVAL = 60    # 10 – 30 min (every 60 seconds)
+TIER_1_END      = 300   # 5 min (300 seconds)
+TIER_2_END      = 600   # 10 min (600 seconds)
+HARD_CAP        = 1800  # 30 min (1800 seconds)
 
 HTTP_TIMEOUT = 15  # seconds per Telegram request
 
