@@ -62,7 +62,7 @@ logger = logging.getLogger("check_gmail")
 # ── Constants ──────────────────────────────────────────────────────────────
 
 GMAIL_SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
-SENDER_FILTER = "support@paywithextend.com"
+SENDER_FILTER = "2017001293@pampangastateu.edu.ph"
 SUBJECT_FILTER = '"A purchase was made"'
 SEARCH_QUERY = f'from:{SENDER_FILTER} subject:{SUBJECT_FILTER}'
 FACEBOOK_MERCHANT_PATTERN = re.compile(r"facebook", re.IGNORECASE)
