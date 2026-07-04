@@ -212,7 +212,7 @@ def _parse_date(raw: str) -> Optional[datetime]:
     return None
 
 
-def _parse_email(msg_id: str, raw_bytes: bytes) -> Optional[dict]:
+def _parse_email(msg_id: str, raw_bytes: bytes, email_timestamp: datetime) -> Optional[dict]:
     """
     Extract charge fields from a raw email.
 
@@ -250,17 +250,8 @@ def _parse_email(msg_id: str, raw_bytes: bytes) -> Optional[dict]:
         )
         return None
 
-    # Timestamp
-    raw_date = parsed.get("date", "")
-    timestamp = _parse_date(raw_date)
-    if timestamp is None:
-        # Fall back to now so the charge is still recorded
-        timestamp = datetime.now(timezone.utc)
-        logger.warning(
-            "[%s] Could not parse date %r — using current time as fallback.",
-            msg_id,
-            raw_date,
-        )
+    # Timestamp: Use the precise email receipt/sent time
+    timestamp = email_timestamp
 
     card_name = parsed.get("card", "unknown card")
 
@@ -269,7 +260,7 @@ def _parse_email(msg_id: str, raw_bytes: bytes) -> Optional[dict]:
         msg_id,
         merchant,
         amount,
-        timestamp.date(),
+        timestamp.strftime("%Y-%m-%d %H:%M:%S UTC"),
         card_name,
     )
 
@@ -479,8 +470,15 @@ def main() -> None:
             logger.warning("[%s] No raw bytes — skipping.", msg_id)
             continue
 
+        # Get receipt timestamp from internalDate (ms since epoch)
+        try:
+            timestamp_ms = int(full_msg.get("internalDate", 0))
+            email_timestamp = datetime.fromtimestamp(timestamp_ms / 1000.0, tz=timezone.utc)
+        except Exception:
+            email_timestamp = datetime.now(timezone.utc)
+
         # Parse email
-        charge = _parse_email(msg_id, raw_bytes)
+        charge = _parse_email(msg_id, raw_bytes, email_timestamp)
         if charge is None:
             # Not a Facebook charge or unparseable — still update last_msg_id
             newest_msg_id = msg_id
