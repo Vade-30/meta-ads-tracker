@@ -36,9 +36,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: data/
-          key: charge-history-v1-${{ runner.os }}
+          key: charge-history-v1-${{ runner.os }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            charge-history-v1-
+            charge-history-v1-${{ runner.os }}-
 
       # ── 3. Set up Python ───────────────────────────────────────────────
       - name: Set up Python 3.12
