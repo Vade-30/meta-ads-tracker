@@ -76,12 +76,24 @@ def _handle_history(conn) -> str:
     def fmt_amt(val: float) -> str:
         return f"{int(val)}" if val.is_integer() else f"{val:.2f}"
 
+    ewma_str = get_state(conn, "ewma_rate")
+    ewma_val_formatted = "N/A"
+    if ewma_str:
+        try:
+            ewma_val_formatted = f"{float(ewma_str):.2f}"
+        except ValueError:
+            pass
+
     if not charges:
-        return "Total: $0\nNo transactions recorded."
+        ewma_line = f"\n14-Day Rolling Average: {ewma_val_formatted} charges/hour" if ewma_val_formatted != "N/A" else ""
+        return f"Total: $0{ewma_line}\nNo transactions recorded."
 
     total = sum(float(row["amount"]) for row in charges)
     
-    lines = [f"Total: ${fmt_amt(total)}"]
+    lines = [
+        f"Total: ${fmt_amt(total)}",
+        f"14-Day Rolling Average: {ewma_val_formatted} charges/hour"
+    ]
 
     for row in charges:
         try:

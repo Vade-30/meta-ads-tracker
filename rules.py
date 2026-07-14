@@ -63,17 +63,17 @@ def charges_to_hourly_buckets(
 
 def rule_amount(amount: float) -> Optional[str]:
     """
-    Return a trigger description if *amount* exceeds AMOUNT_THRESHOLD,
+    Return a trigger description if *amount* is not exactly equal to AMOUNT_THRESHOLD,
     otherwise None.
     """
-    if amount > AMOUNT_THRESHOLD:
+    if amount != AMOUNT_THRESHOLD:
         description = (
-            f"AMOUNT RULE: charge of ${amount:.2f} exceeds the "
-            f"${AMOUNT_THRESHOLD:.2f} fixed threshold"
+            f"AMOUNT RULE: charge of ${amount:.2f} is not exactly the expected "
+            f"${AMOUNT_THRESHOLD:.2f}"
         )
         logger.warning("Rule 1 TRIGGERED: %s", description)
         return description
-    logger.debug("Rule 1 OK: amount=%.2f <= threshold=%.2f", amount, AMOUNT_THRESHOLD)
+    logger.debug("Rule 1 OK: amount=%.2f is exactly expected threshold=%.2f", amount, AMOUNT_THRESHOLD)
     return None
 
 
