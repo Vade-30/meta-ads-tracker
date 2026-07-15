@@ -5,9 +5,8 @@ Deletes all charges recorded on 2026-07-15 (the test date) since those were
 injected by the test sender email and are not real Meta Ads charges.
 """
 
-import sqlite3
 import logging
-from db import get_db_path, init_db
+from db import init_db
 
 logging.basicConfig(
     level=logging.INFO,
@@ -18,9 +17,7 @@ logger = logging.getLogger("cleanup")
 TEST_DATE = "2026-07-15"  # Date of test charges to remove
 
 def cleanup():
-    db_path = get_db_path()
-    conn = sqlite3.connect(db_path)
-    init_db(conn)
+    conn = init_db()  # init_db() opens the DB and returns the connection
 
     # Find test charges first
     rows = conn.execute(
