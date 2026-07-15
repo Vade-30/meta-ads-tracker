@@ -50,10 +50,6 @@ jobs:
       - name: Install dependencies
         run: pip install --quiet -r requirements.txt
 
-      # ── 5a. ONE-TIME: Delete test charges from 2026-07-15 ─────────────────
-      - name: Cleanup test charges
-        run: python cleanup_test_charges.py
-
       # ── 5. Run the main detection script ──────────────────────────────
       # All secrets are injected as environment variables — never echoed.
       - name: Run Gmail monitor
