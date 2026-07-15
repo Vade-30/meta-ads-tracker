@@ -68,11 +68,66 @@ def _api_url(method: str) -> str:
     return TELEGRAM_API.format(token=_bot_token(), method=method)
 
 
+import re
+
+def html_to_markdown(html_text: str) -> str:
+    """Convert basic HTML tags (b, code, pre, br) to Markdown for Discord."""
+    text = html_text
+    # Replace bold tags
+    text = re.sub(r'</?b>', '**', text)
+    # Replace code tags
+    text = re.sub(r'</?code>', '`', text)
+    # Replace pre tags
+    text = re.sub(r'</?pre>', '```', text)
+    # Replace br tags
+    text = re.sub(r'<br\s*/?>', '\n', text)
+    # Remove any remaining HTML tags
+    text = re.sub(r'<[^>]+>', '', text)
+    return text
+
+
+def send_discord_message(text: str) -> bool:
+    """
+    Send a message to Discord via webhook.
+    Converts HTML format to Markdown.
+    Returns True on success, False if webhook URL is not set or failed.
+    """
+    webhook_url = os.environ.get("DISCORD_WEBHOOK_URL", "").strip()
+    if not webhook_url:
+        logger.debug("DISCORD_WEBHOOK_URL is not set. Skipping Discord alert.")
+        return False
+
+    markdown_text = html_to_markdown(text)
+    try:
+        resp = requests.post(
+            webhook_url,
+            json={"content": markdown_text},
+            timeout=HTTP_TIMEOUT,
+        )
+        if not resp.ok:
+            logger.warning(
+                "Discord webhook failed: HTTP %d — %s",
+                resp.status_code,
+                resp.text[:200],
+            )
+            return False
+        logger.debug("Discord webhook message sent successfully.")
+        return True
+    except requests.RequestException as exc:
+        logger.warning("Discord webhook request error: %s", exc)
+        return False
+
+
 def send_message(text: str) -> bool:
     """
-    Send a Telegram message.  Returns True on success, False on any error.
+    Send a Telegram message and a Discord message (if webhook is configured).
+    Returns True on Telegram success, False on Telegram error.
     Never raises — errors are logged and swallowed so the alert loop continues.
     """
+    # Try sending to Discord (ignored if webhook URL not set)
+    send_discord_message(text)
+
+    # Try sending to Telegram
     try:
         resp = requests.post(
             _api_url("sendMessage"),

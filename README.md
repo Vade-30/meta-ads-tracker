@@ -291,6 +291,27 @@ The summary and bot interactions are designed defensively to never interfere wit
 
 ---
 
+## Discord Integration (Optional)
+
+You can receive both **Fraud Alerts** and the **12-Hour Summaries** in a Discord channel by configuring a Discord Webhook.
+
+### How to set it up:
+1. Open Discord and go to the server where you want the alerts to be posted.
+2. Next to the target channel name, click the **Gear icon (Edit Channel)**.
+3. Click **Integrations** on the left sidebar, then click **Webhooks** (or **Create Webhook**).
+4. Click **Copy Webhook URL**.
+5. Save the copied URL as a new GitHub Secret in your repository:
+   * **Name:** `DISCORD_WEBHOOK_URL`
+   * **Value:** *(Paste your Webhook URL)*
+
+### How it behaves:
+* Once `DISCORD_WEBHOOK_URL` is set, all alerts and summaries will be sent to both Telegram and Discord simultaneously.
+* The script automatically converts Telegram's HTML format (like `<b>`, `<code>`, etc.) to Discord's Markdown format (like `**`, `` ` ``, etc.).
+* Interactive commands (like `/history` or `/summary`) remain **exclusive to Telegram**, as Discord's serverless webhook setup does not support incoming command polling.
+* If you do not configure a `DISCORD_WEBHOOK_URL`, the script will gracefully skip Discord and only use Telegram.
+
+---
+
 ## Contributing / Personal Use Notes
 
 This is a personal-use tool.  The repo is public only to get unlimited free
