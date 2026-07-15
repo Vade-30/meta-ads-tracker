@@ -50,14 +50,6 @@ jobs:
       - name: Install dependencies
         run: pip install --quiet -r requirements.txt
 
-      # ── 5a. ONE-TIME: Reset last_message_id so missed charges are recovered ─
-      - name: Reset last message ID state
-        run: |
-          mkdir -p data
-          sqlite3 data/charges.db "DELETE FROM state WHERE key='last_message_id';"
-          echo "Reset done. Remaining state:"
-          sqlite3 data/charges.db "SELECT key, value FROM state;"
-
       # ── 5. Run the main detection script ──────────────────────────────
       # All secrets are injected as environment variables — never echoed.
       - name: Run Gmail monitor
