@@ -45,6 +45,9 @@ TIER_1_END      = 300   # 5 min (300 seconds)
 TIER_2_END      = 600   # 10 min (600 seconds)
 HARD_CAP        = 1800  # 30 min (1800 seconds)
 
+# Discord alert timing: send at 0 min, 10 min, and 20 min only (max 3 times)
+DISCORD_ALERT_TIMES = [0, 600, 1200]
+
 HTTP_TIMEOUT = 15  # seconds per Telegram request
 
 
@@ -120,14 +123,10 @@ def send_discord_message(text: str) -> bool:
 
 def send_message(text: str) -> bool:
     """
-    Send a Telegram message and a Discord message (if webhook is configured).
-    Returns True on Telegram success, False on Telegram error.
+    Send a Telegram message only.
+    Returns True on success, False on any error.
     Never raises — errors are logged and swallowed so the alert loop continues.
     """
-    # Try sending to Discord (ignored if webhook URL not set)
-    send_discord_message(text)
-
-    # Try sending to Telegram
     try:
         resp = requests.post(
             _api_url("sendMessage"),
@@ -146,6 +145,18 @@ def send_message(text: str) -> bool:
     except requests.RequestException as exc:
         logger.warning("Telegram sendMessage request error: %s", exc)
         return False
+
+
+def _build_discord_alert_text() -> str:
+    """
+    Build the simple, human-friendly Discord alert message.
+    Sent only for frequency rule triggers (max 3 times at 0m, 10m, 20m).
+    """
+    return (
+        "🚨 TESTING WARNING 🚨\n\n"
+        "Hey! Something looks off with your Vizoya card. There's been more charges "
+        "than usual in a short amount of time. Please check the ad account."
+    )
 
 
 def get_updates(offset: Optional[int] = None) -> list[dict]:
@@ -258,6 +269,10 @@ def run_alert_loop(
     """
     Send an alert and repeat it in a tiered loop until /ack or 30-min cap.
 
+    Telegram: receives the full detailed alert every loop iteration.
+    Discord:  receives a simple human-friendly message only when a frequency
+              rule triggered, at most 3 times (at 0m, 10m, and 20m elapsed).
+
     Parameters
     ----------
     triggered_reasons : list[str]
@@ -271,8 +286,14 @@ def run_alert_loop(
     last_update_id: Optional[int] = None
     send_index = 0
 
+    # Discord: only send for frequency rule triggers, max 3 times
+    is_frequency_alert = any("FREQUENCY RULE" in r for r in triggered_reasons)
+    discord_sent_count = 0
+
     logger.info(
-        "Starting alert loop. Reasons: %s", " | ".join(triggered_reasons)
+        "Starting alert loop. Reasons: %s | frequency_alert=%s",
+        " | ".join(triggered_reasons),
+        is_frequency_alert,
     )
 
     # Drain any stale updates that pre-date this alert so we don't
@@ -309,13 +330,28 @@ def run_alert_loop(
             interval = TIER_3_INTERVAL
             tier = 3
 
-        # ── Send alert ────────────────────────────────────────────────────
+        # ── Send Discord alert (frequency only, max 3 times at 0/10/20 min) ──
+        if (
+            is_frequency_alert
+            and discord_sent_count < len(DISCORD_ALERT_TIMES)
+            and elapsed >= DISCORD_ALERT_TIMES[discord_sent_count]
+        ):
+            discord_text = _build_discord_alert_text()
+            send_discord_message(discord_text)
+            logger.info(
+                "Discord alert #%d sent (elapsed=%.0fs)",
+                discord_sent_count + 1,
+                elapsed,
+            )
+            discord_sent_count += 1
+
+        # ── Send Telegram alert (full details, every iteration) ───────────
         send_index += 1
         alert_text = _build_alert_text(
             triggered_reasons, charge_info, send_index, elapsed
         )
         logger.info(
-            "Sending alert #%d (tier=%d, elapsed=%.0fs)",
+            "Sending Telegram alert #%d (tier=%d, elapsed=%.0fs)",
             send_index,
             tier,
             elapsed,
