@@ -153,7 +153,7 @@ def _build_discord_alert_text() -> str:
     Sent only for frequency rule triggers (max 3 times at 0m, 10m, 20m).
     """
     return (
-        "🚨 TESTING WARNING 🚨\n\n"
+        "🚨 UNUSUAL ACTIVITY DETECTED 🚨\n\n"
         "Hey! Something looks off with your Vizoya card. There's been more charges "
         "than usual in a short amount of time. Please check the ad account."
     )
