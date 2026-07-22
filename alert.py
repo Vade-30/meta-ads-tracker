@@ -265,13 +265,15 @@ def _build_alert_text(
 def run_alert_loop(
     triggered_reasons: list[str],
     charge_info: dict,
+    hour_count: int = 0,
 ) -> None:
     """
     Send an alert and repeat it in a tiered loop until /ack or 30-min cap.
 
     Telegram: receives the full detailed alert every loop iteration.
-    Discord:  receives a simple human-friendly message only when a frequency
-              rule triggered, at most 3 times (at 0m, 10m, and 20m elapsed).
+    Discord:  receives a simple human-friendly message only when there are
+              more than 6 charges in the current hour, at most 3 times
+              (at 0m, 10m, and 20m elapsed).
 
     Parameters
     ----------
@@ -279,6 +281,8 @@ def run_alert_loop(
         Human-readable descriptions of which rules fired.
     charge_info : dict
         Keys: amount, timestamp, card_name, merchant, message_id.
+    hour_count : int
+        Number of charges recorded in the current hour (used for Discord threshold).
     """
     alert_start = time.monotonic()
     alert_start_epoch = datetime.now(timezone.utc).timestamp()
@@ -286,14 +290,15 @@ def run_alert_loop(
     last_update_id: Optional[int] = None
     send_index = 0
 
-    # Discord: only send for frequency rule triggers, max 3 times
-    is_frequency_alert = any("FREQUENCY RULE" in r for r in triggered_reasons)
+    # Discord: only send if more than 6 charges in the current hour, max 3 times
+    is_high_frequency = hour_count > 6
     discord_sent_count = 0
 
     logger.info(
-        "Starting alert loop. Reasons: %s | frequency_alert=%s",
+        "Starting alert loop. Reasons: %s | hour_count=%d | discord_eligible=%s",
         " | ".join(triggered_reasons),
-        is_frequency_alert,
+        hour_count,
+        is_high_frequency,
     )
 
     # Drain any stale updates that pre-date this alert so we don't
@@ -330,9 +335,9 @@ def run_alert_loop(
             interval = TIER_3_INTERVAL
             tier = 3
 
-        # ── Send Discord alert (frequency only, max 3 times at 0/10/20 min) ──
+        # ── Send Discord alert (only if >6 charges this hour, max 3 at 0/10/20 min) ─
         if (
-            is_frequency_alert
+            is_high_frequency
             and discord_sent_count < len(DISCORD_ALERT_TIMES)
             and elapsed >= DISCORD_ALERT_TIMES[discord_sent_count]
         ):

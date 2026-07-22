@@ -535,7 +535,14 @@ def main() -> None:
                 "merchant":   charge["merchant"],
                 "message_id": charge["message_id"],
             }
-            run_alert_loop(triggered, charge_info)
+            # Count charges in the current hour for Discord threshold
+            now_utc = charge["timestamp"].astimezone(timezone.utc)
+            current_hour_key = (now_utc.year, now_utc.month, now_utc.day, now_utc.hour)
+            from rules import charges_to_hourly_buckets
+            buckets = charges_to_hourly_buckets(all_charges)
+            current_hour_count = buckets.get(current_hour_key, 0)
+
+            run_alert_loop(triggered, charge_info, hour_count=current_hour_count)
             # Alert loop blocks until ACK or 30-min cap — continue processing
             # remaining messages after it returns.
         else:
